@@ -1,4 +1,4 @@
-from project1LaneDetection.laneDetectionMethods import *
+from laneDetectionMethods import *
 
 #Test on a single image
 test_images = [read_image('test_images/' + i) for i in os.listdir('test_images/')]

@@ -1,4 +1,4 @@
-from project1LaneDetection.laneDetectionMethods import *
+from laneDetectionMethods import *
 
 #Test on a video1: straight lane
 white_output = 'result_straight.mp4'
