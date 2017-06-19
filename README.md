@@ -1,4 +1,4 @@
-<img src="Figure_2.jpg" width="480" alt="Combined Image" />
+<img src="Figure_2.png" width="480" alt="Combined Image" />
 
 **Finding Lane Lines on the Road**
 
