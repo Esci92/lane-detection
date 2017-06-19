@@ -1,4 +1,4 @@
-<img src="laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
+<img src="Figure_2.jpg" width="480" alt="Combined Image" />
 
 **Finding Lane Lines on the Road**
 
@@ -55,7 +55,7 @@ and check that the install worked:
 `>>>`
 (Ctrl-d to exit Python)
 
-**Step 4:** Opening the code in a Jupyter Notebook
+**Step 4:** Run
 
 Run `processImage.py` in order to detect the lane on a single image.
 Run `processVideo.py` in order to detect the lane on a video.
