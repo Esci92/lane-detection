@@ -290,7 +290,7 @@ def test_hough():
 def process_image(image):
     """Puts image through pipeline and returns 3-channel image for processing video below."""
     result = draw_lane_lines(image)
-    print(result.shape)
+    # print(result.shape)
     return result
 
 # Pipeline
