@@ -182,10 +182,10 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
             for i in range(4):
                 left_line[i] += (line[i] / len(left_lines))
         slope = (left_line[3] - left_line[1]) / (left_line[2] - left_line[0])
-        top_x = left_line[0] + (top_y - left_line[1]) / slope
-        bottom_x = left_line[0] + (img.shape[0] - left_line[1]) / slope
+        top_l_x = left_line[0] + (top_y - left_line[1]) / slope
+        bottom_l_x = left_line[0] + (img.shape[0] - left_line[1]) / slope
         # cv2.line(img, (left_line[0], left_line[1]), (left_line[2], left_line[3]), color, thickness * 10)
-        cv2.line(img, (int(bottom_x), img.shape[0]), (int(top_x), int(top_y)), color, thickness * 10)
+        cv2.line(img, (int(bottom_l_x), img.shape[0]), (int(top_l_x), int(top_y)), [0,255,0], thickness * 10)
 
     # get the average position of each line
     if len(right_lines) > 0:
@@ -195,10 +195,13 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
             for i in range(4):
                 right_line[i] += (line[i] / len(right_lines))
         slope = (right_line[3] - right_line[1]) / (right_line[2] - right_line[0])
-        top_x = right_line[0] + (top_y - right_line[1]) / slope
-        bottom_x = right_line[0] + (img.shape[0] - right_line[1]) / slope
+        top_r_x = right_line[0] + (top_y - right_line[1]) / slope
+        bottom_r_x = right_line[0] + (img.shape[0] - right_line[1]) / slope
         # cv2.line(img, (right_line[0], right_line[1]), (right_line[2], right_line[3]), [0,0,255], thickness * 10)
-        cv2.line(img, (int(bottom_x), img.shape[0]), (int(top_x), int(top_y)), color, thickness * 10)
+        cv2.line(img, (int(bottom_r_x), img.shape[0]), (int(top_r_x), int(top_y)), [255,0,0], thickness * 10)
+
+    cv2.line(img, (int((bottom_l_x-bottom_r_x)/2+bottom_r_x), img.shape[0]),
+             (int((top_l_x-top_r_x)/2+top_r_x), int(top_y)), [0,0,255], thickness * 10)
 
 def find_linear_regression_line(points):
     # Separate points into X and y to fit LinearRegression model
