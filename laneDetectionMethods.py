@@ -33,11 +33,11 @@ def grayscale(img):
 
 def canny(img, low_threshold, high_threshold):
     """Applies the Canny transform"""
-    return cv2.Canny(img, low_threshold, high_threshold)
+    return cv2.Canny(img, low_threshold, high_threshold,L2gradient = True)
 
 def gaussian_blur(img, kernel_size):
     """Applies a Gaussian Noise kernel"""
-    return cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
+    return cv2.GaussianBlur(img, (kernel_size, kernel_size), 1)
 
 def region_of_interest(img, vertices):
     """
@@ -185,7 +185,7 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
         top_l_x = left_line[0] + (top_y - left_line[1]) / slope
         bottom_l_x = left_line[0] + (img.shape[0] - left_line[1]) / slope
         # cv2.line(img, (left_line[0], left_line[1]), (left_line[2], left_line[3]), color, thickness * 10)
-        cv2.line(img, (int(bottom_l_x), img.shape[0]), (int(top_l_x), int(top_y)), [0,255,0], thickness * 10)
+        cv2.line(img, (int(bottom_l_x), img.shape[0]), (int(top_l_x), int(top_y)), [0,255,0], thickness * 6)
 
     # get the average position of each line
     if len(right_lines) > 0:
@@ -198,10 +198,21 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
         top_r_x = right_line[0] + (top_y - right_line[1]) / slope
         bottom_r_x = right_line[0] + (img.shape[0] - right_line[1]) / slope
         # cv2.line(img, (right_line[0], right_line[1]), (right_line[2], right_line[3]), [0,0,255], thickness * 10)
-        cv2.line(img, (int(bottom_r_x), img.shape[0]), (int(top_r_x), int(top_y)), [255,0,0], thickness * 10)
+        cv2.line(img, (int(bottom_r_x), img.shape[0]), (int(top_r_x), int(top_y)), [255,0,0], thickness * 6)
 
+    # set middle lane, calculating average
     cv2.line(img, (int((bottom_l_x-bottom_r_x)/2+bottom_r_x), img.shape[0]),
-             (int((top_l_x-top_r_x)/2+top_r_x), int(top_y)), [0,0,255], thickness * 10)
+             (int((top_l_x-top_r_x)/2+top_r_x), int(top_y)), [0,0,255], thickness * 2)
+
+    # debug
+    # print("bottom")
+    # print(bottom_l_x)
+    # print(bottom_r_x)
+    # print((int((bottom_l_x-bottom_r_x)/2+bottom_r_x)))
+    # print("top")
+    # print(top_l_x)
+    # print(top_r_x)
+    # print((int((top_l_x-top_r_x)/2+top_r_x)))
 
 def find_linear_regression_line(points):
     # Separate points into X and y to fit LinearRegression model
@@ -266,8 +277,8 @@ def draw_lane_lines(image):
     # Hough lines
     rho = 2  # distance resolution in pixels of the Hough grid
     theta = np.pi / 180  # angular resolution in radians of the Hough grid
-    threshold = 45  # minimum number of votes (intersections in Hough grid cell)
-    min_line_len = 40  # minimum number of pixels making up a line
+    threshold = 100  # minimum number of votes (intersections in Hough grid cell)
+    min_line_len = 100  # minimum number of pixels making up a line
     max_line_gap = 100  # maximum gap in pixels between connectable line segments
     lines_image = hough_lines(edges_image_with_mask, rho, theta, threshold, min_line_len, max_line_gap)
 
@@ -275,11 +286,14 @@ def draw_lane_lines(image):
     hough_rgb_image = lines_image
     # hough_rgb_image.dtype: uint8.  Shape: (540,960,3).
     # hough_rgb_image is like [[[0 0 0], [0 0 0],...] [[0 0 0], [0 0 0],...]]
+
     ## Plot Hough lines image
     plt.subplot(2, 2, 3)
     plt.imshow(hough_rgb_image, cmap='Greys_r')
+
     # Combine lines image with original image
     final_image = weighted_img(hough_rgb_image, image)
+
     ## Plot final image
     plt.subplot(2, 2, 4)
     plt.imshow(final_image, cmap='Greys_r')
