@@ -8,7 +8,6 @@ from sklearn.linear_model import LinearRegression
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
 
-
 def read_image(image_path):
     """Reads and returns image."""
     return mpimg.imread(image_path)
@@ -17,11 +16,11 @@ def read_image_and_print_dims(image_path):
     """Reads and returns image.
     Helper function to examine how an image is represented.
     """
-    #reading in an image
+    # reading in an image
     image = mpimg.imread(image_path)
-    #printing out some stats and plotting
+    # printing out some stats and plotting
     print('This image is:', type(image), 'with dimensions:', image.shape)
-    plt.imshow(image)  #call as plt.imshow(gray, cmap='gray') to show a grayscaled image
+    plt.imshow(image)  # call as plt.imshow(gray, cmap='gray') to show a grayscaled image
     return image
 
 def grayscale(img):
@@ -33,16 +32,15 @@ def grayscale(img):
 
 def canny(img, low_threshold, high_threshold):
     """Applies the Canny transform"""
-    return cv2.Canny(img, low_threshold, high_threshold,L2gradient = True)
+    return cv2.Canny(img, low_threshold, high_threshold)
 
 def gaussian_blur(img, kernel_size):
     """Applies a Gaussian Noise kernel"""
-    return cv2.GaussianBlur(img, (kernel_size, kernel_size), 1)
+    return cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)  ## CE
 
 def region_of_interest(img, vertices):
     """
     Applies an image mask.
-
     Only keeps the region of the image defined by the polygon
     formed from `vertices`. The rest of the image is set to black.
     """
@@ -66,13 +64,12 @@ def region_of_interest(img, vertices):
 def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     `img` should be the output of a Canny transform.
-
     Returns an image with hough lines drawn.
     """
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]),
                             minLineLength=min_line_len, maxLineGap=max_line_gap)
     # print("Hough lines: ", lines)
-    line_img = np.zeros((*img.shape,3), dtype=np.uint8)
+    line_img = np.zeros((*img.shape, 3), dtype=np.uint8)
     draw_lines(line_img, lines)
     return line_img
 
@@ -80,11 +77,8 @@ def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
     """
     `img` is the output of the hough_lines(), An image with lines drawn on it.
     Should be a blank image (all black) with lines drawn on it.
-
     `initial_img` should be the image before any processing.
-
     The result image is computed as follows:
-
     initial_img * α + img * β + λ
     NOTE: initial_img and img must be the same shape!
     """
@@ -109,6 +103,7 @@ def draw_linear_regression_line(coef, intercept, intersection_x, img, imshape=[5
 
     # Draw line using cv2.line
     cv2.line(img, point_one, point_two, color, thickness)
+
 def find_line_fit(slope_intercept):
     """slope_intercept is an array [[slope, intercept], [slope, intercept]...]."""
 
@@ -137,18 +132,42 @@ def find_line_fit(slope_intercept):
     print("Slope: ", slope, "Intercept: ", intercept)
     return slope, intercept
 
+# Berechne Delta
+def line(p1, p2):
+    A = (p1[1] - p2[1])
+    B = (p2[0] - p1[0])
+    C = (p1[0] * p2[1] - p2[0] * p1[1])
+    return A, B, -C
+
+# Schnittpunkt berechnen
+def intersection(L1, L2):
+    D = L1[0] * L2[1] - L1[1] * L2[0]
+    Dx = L1[2] * L2[1] - L1[1] * L2[2]
+    Dy = L1[0] * L2[2] - L1[2] * L2[0]
+    if D != 0:
+        x = Dx / D
+        y = Dy / D
+        return int(x), int(y)
+    else:
+        return False
+
+# Berechne Schnittpunkt main funktion
+def Find_Intersection_of_two_lines(PointL1Start, PointL1End, PointL2Start, PointL2End):
+    L1 = line(PointL1Start, PointL1End)
+    L2 = line(PointL2Start, PointL2End)
+    R = intersection(L1, L2)
+    return R
+
 def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
     """
     NOTE: this is the function you might want to use as a starting point once you want to
     average/extrapolate the line segments you detect to map out the full
     extent of the lane (going from the result shown in raw-lines-example.mp4
     to that shown in P1_example.mp4).
-
     Think about things like separating line segments by their
     slope ((y2-y1)/(x2-x1)) to decide which segments are part of the left
     line vs. the right line.  Then, you can average the position of each of
     the lines and extrapolate to the top and bottom of the lane.
-
     This function draws `lines` with `color` and `thickness`.
     Lines are drawn on the image inplace (mutates the image).
     If you want to make the lines semi-transparent, think about combining
@@ -156,7 +175,13 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
     """
     left_lines = []
     right_lines = []
-    top_y = 1e6
+    top_y = 1e6  ## CE
+
+    # int var für Error Catching, falls keine Line erkannt wird. ## CE
+    bottom_l_x = 0
+    bottom_r_x = 0
+    top_l_x = 0
+    top_r_x = 0
 
     for line in lines:
         # no lane should be verticle view from the car
@@ -175,6 +200,7 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
                 top_y = y2
 
     # get the average position of each line
+    # Linie grün
     if len(left_lines) > 0:
         left_line = [0, 0, 0, 0]
         for line in left_lines:
@@ -185,9 +211,10 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
         top_l_x = left_line[0] + (top_y - left_line[1]) / slope
         bottom_l_x = left_line[0] + (img.shape[0] - left_line[1]) / slope
         # cv2.line(img, (left_line[0], left_line[1]), (left_line[2], left_line[3]), color, thickness * 10)
-        cv2.line(img, (int(bottom_l_x), img.shape[0]), (int(top_l_x), int(top_y)), [0,255,0], thickness * 6)
+        # cv2.line(img, (int(bottom_l_x), img.shape[0]), (int(top_l_x), int(top_y)), [255, 255, 0], thickness * 6)
 
     # get the average position of each line
+    # Linie rot
     if len(right_lines) > 0:
         right_line = [0, 0, 0, 0]
         for line in right_lines:
@@ -198,12 +225,31 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=1):
         top_r_x = right_line[0] + (top_y - right_line[1]) / slope
         bottom_r_x = right_line[0] + (img.shape[0] - right_line[1]) / slope
         # cv2.line(img, (right_line[0], right_line[1]), (right_line[2], right_line[3]), [0,0,255], thickness * 10)
-        cv2.line(img, (int(bottom_r_x), img.shape[0]), (int(top_r_x), int(top_y)), [255,0,0], thickness * 6)
+        # cv2.line(img, (int(bottom_r_x), img.shape[0]), (int(top_r_x), int(top_y)), [255, 255, 0], thickness * 6)
 
-    # set middle lane, calculating average
-    cv2.line(img, (int((bottom_l_x-bottom_r_x)/2+bottom_r_x), img.shape[0]),
-             (int((top_l_x-top_r_x)/2+top_r_x), int(top_y)), [0,0,255], thickness * 2)
+    # Debug
+    # print(top_y)
+    # print(bottom_r_x)
+    # print(top_r_x)
+    # print(Find_Intersection_of_two_lines([top_l_x, top_y], [bottom_l_x, img.shape[0]], [top_r_x, top_y],
+    #                                     [bottom_r_x, img.shape[0]]))
 
+    ## Berechne max lenge
+    xy_max_lengh = Find_Intersection_of_two_lines([top_l_x, top_y], [bottom_l_x, img.shape[0]], [top_r_x, top_y],
+                                                  [bottom_r_x, img.shape[0]])
+
+    ## CE
+    # Error Catching, falls keine Line erkannt wird.
+    # Linie Blau
+    if bottom_r_x != 0:
+        ## Neue Linien mit max länge
+        cv2.line(img, (int(bottom_r_x), img.shape[0]), xy_max_lengh, [255, 0, 0], thickness * 6)  ## CE
+        if bottom_l_x != 0:
+            cv2.line(img, (int(bottom_l_x), img.shape[0]), xy_max_lengh, [0, 255, 0], thickness * 6)  ## CE
+            # Berrechnen der neuen mittelLinie
+            cv2.line(img, (int((bottom_l_x - bottom_r_x) / 2 + bottom_r_x), img.shape[0]), (xy_max_lengh), [0, 0, 255], thickness * 2)
+
+    ## CE
     # debug
     # print("bottom")
     # print(bottom_l_x)
@@ -236,7 +282,7 @@ def test_hough():
     img = read_image('test_images/solidYellowCurve2.jpg')
     img = grayscale(img)
     imgCanny = canny(img, 100, 200)
-    imgHough = hough_lines(imgCanny, 1, np.pi/180, 200, 100, 10)
+    imgHough = hough_lines(imgCanny, 1, np.pi / 180, 200, 100, 10)
     tot = weighted_img(imgHough, img)
     plt.imshow(tot)
     plt.show()
@@ -267,7 +313,9 @@ def draw_lane_lines(image):
 
     # Mask edges image
     border = 0
-    vertices = np.array([[(0, imshape[0]), (465, 320), (475, 320), (imshape[1], imshape[0])]], dtype=np.int32)
+
+    # Werte Angepasst um besseres Matching zu erreichen (Trial and Error) ## CE
+    vertices = np.array([[(100, imshape[0]), (465, 320), (465, 300), (imshape[1], imshape[0])]], dtype=np.int32)
     edges_image_with_mask = region_of_interest(edges_image, vertices)
     ## Plot masked edges image
     bw_edges_image_with_mask = cv2.cvtColor(edges_image_with_mask, cv2.COLOR_GRAY2BGR)
@@ -275,11 +323,12 @@ def draw_lane_lines(image):
     plt.imshow(bw_edges_image_with_mask)
 
     # Hough lines
-    rho = 2  # distance resolution in pixels of the Hough grid
+    # Werte besser mit den Schwizer strassen abgestummen ## CE
+    rho = 4  # distance resolution in pixels of the Hough grid
     theta = np.pi / 180  # angular resolution in radians of the Hough grid
-    threshold = 100  # minimum number of votes (intersections in Hough grid cell)
-    min_line_len = 100  # minimum number of pixels making up a line
-    max_line_gap = 100  # maximum gap in pixels between connectable line segments
+    threshold = 80  # minimum number of votes (intersections in Hough grid cell)
+    min_line_len = 40  # minimum number of pixels making up a line
+    max_line_gap = 140  # maximum gap in pixels between connectable line segments
     lines_image = hough_lines(edges_image_with_mask, rho, theta, threshold, min_line_len, max_line_gap)
 
     # Convert Hough from single channel to RGB to prep for weighted
@@ -298,4 +347,3 @@ def draw_lane_lines(image):
     plt.subplot(2, 2, 4)
     plt.imshow(final_image, cmap='Greys_r')
     return final_image
-
